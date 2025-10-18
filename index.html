@@ -114,15 +114,111 @@
       .toast p{color:#0f2a45}
       .toast .meta{color:#335a7a}
     }
+    /* === Split-screen layout === */
+    #bg-wrap{position:fixed; inset:0; z-index:0; overflow:hidden;}
+    #nyse, #market{position:absolute; top:0; bottom:0;}
+    #nyse{left:0; width:36vw; min-width:440px; background:linear-gradient(180deg,#0b1016,#0e141a);}
+    #market{right:0; left:36vw; background:linear-gradient(180deg, var(--bg), #0c1418);}
+    @media (max-width:960px){
+      #nyse{display:none;}
+      #market{left:0;}
+    }
+
+    /* Central soft light dividing strip */
+    .split-glow{
+      position:absolute; top:-10%; bottom:-10%; left:36vw; width:2px;
+      background:linear-gradient(180deg,transparent,#39e0c640,transparent);
+      filter:blur(6px); opacity:.8; pointer-events:none;
+    }
+
+    /* === NYSE Information Wall (column-style digital board) === */
+    #nyse-wall{
+      position:absolute; inset:0; display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:10px; padding:22px;
+      opacity:.9;
+    }
+    .nyse-col{
+       display:grid; grid-auto-rows:minmax(24px, auto); gap:6px;
+       filter: drop-shadow(0 2px 6px rgba(0,0,0,.35));
+    }
+    .tile{
+       padding:6px 8px; border-radius:8px;
+       background:linear-gradient(180deg, rgba(15,25,35,.9), rgba(8,14,22,.9));
+       border:1px solid rgba(255,255,255,.05);
+       font: 12px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+       color:#cfe8ff;
+       display:flex; align-items:center; justify-content:space-between;
+    }
+    .sym{opacity:.9; letter-spacing:.3px;}
+    .pct{font-weight:700;}
+    .up{color:#65f7c4;}
+    .down{color:#ff8aa0;}
+    .flat{color:#a0b3c2;}
+    /* Slight up and down drift of columns (creating a dynamic feel in the hall) */
+    @keyframes floatY { 0%{ transform:translateY(-6px)} 50%{ transform:translateY(6px)} 100%{ transform:translateY(-6px)} }
+    .nyse-col{ animation: floatY 10s ease-in-out infinite; }
+    .nyse-col:nth-child(odd){ animation-duration: 13s; }
+
+    /* Overall masking of the trading hall (lighting/noise texture) */
+    .nyse-overlay{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(1000px 400px at 40% 0%, rgba(120,220,200,.15), transparent 60%),
+        radial-gradient(900px 300px at 60% 100%, rgba(60,140,220,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.04), transparent 30%, transparent 70%, rgba(0,0,0,.25));
+      pointer-events:none;
+    }
+
+    /* === Right Grid & Price Line Canvas (what you had before) === */
+    canvas#chart{position:absolute; inset:0; width:100%; height:100%; display:block;}
+    .grid{position:absolute; inset:0; background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size:60px 60px; opacity:.20;}
+    @keyframes drift {from{transform:translate(0,0)} to{transform:translate(-60px,-60px)}}
+    .grid{animation:drift 18s linear infinite;}
+
+    /* === Bottom scrolling quotation band（ticker tape） === */
+    #tape{
+      position:absolute; left:0; right:0; bottom:0; height:40px;
+      background:linear-gradient(180deg, rgba(10,18,26,.9), rgba(6,12,18,.9));
+      border-top:1px solid rgba(255,255,255,.06);
+      overflow:hidden; z-index:1;
+    }
+    #tape-track{position:absolute; white-space:nowrap; will-change: transform; font: 13px/40px ui-monospace, monospace;}
+    #tape-track span{display:inline-block; padding:0 24px; color:#cfe8ff}
+    #tape-track .u{color:#65f7c4}  /* up */
+    #tape-track .d{color:#ff8aa0}  /* down */
+    #tape-track .f{color:#a0b3c2}  /* flat */
   </style>
 </head>
 <body>
   <!-- animated background -->
   <div id="bg-wrap" aria-hidden="true">
+  <!-- Left: NYSE information wall (column digital board + gradient texture) -->
+  <section id="nyse">
+    <div class="nyse-overlay"></div>
+    <div id="nyse-wall"></div>
+  </section>
+
+  <!-- Right: Price curve (use your original chart logic) -->
+  <section id="market">
     <canvas id="chart"></canvas>
     <div class="grid"></div>
-    <div id="toasts"></div>
+  </section>
+
+  <!-- Soft light band separated in the middle -->
+  <div class="split-glow"></div>
+
+  <!-- Bottom: Rolling quotation band（ticker tape） -->
+  <div id="tape">
+    <div id="tape-track"></div>
   </div>
+
+  <!-- Pop-up window retention -->
+  <div id="toasts"></div>
+</div>
 
   <!-- foreground content -->
   <main class="card" role="main" aria-labelledby="title">
@@ -145,6 +241,88 @@
   </main>
 
   <script>
+    /* =====================
+     * NYSE Information Wall (column-style digital board)
+     * ===================== */
+    (function initNYSE(){
+      const WALL = document.getElementById('nyse-wall');
+      if(!WALL) return;
+
+      const COLS = 12;             // Number of columns
+      const ROWS = 10;             // Number of rows per column
+      const SYMBOLS = ["AAPL","MSFT","NVDA","AMZN","META","TSLA","GOOGL","AMD","NFLX","AVGO","JPM","BAC","XOM","CVX","KO","PEP","WMT","DIS","INTC","CRM","ADBE","CSCO","QCOM","TSM"];
+      const pick = (arr)=> arr[Math.floor(Math.random()*arr.length)];
+
+      // Build columns
+      for(let c=0;c<COLS;c++){
+        const col = document.createElement('div');
+        col.className = 'nyse-col';
+        for(let r=0;r<ROWS;r++){
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.innerHTML = `<span class="sym">--</span><span class="pct flat">0.00%</span>`;
+          col.appendChild(tile);
+        }
+        WALL.appendChild(col);
+      }
+
+      // Initialization & Scheduled Updates
+      function rndPct(){
+        const v = (Math.random()*2.6 - 1.3); // -1.3% ~ +1.3%
+        return Math.round(v*100)/100;
+      }
+      function updateTile(tile){
+        const sym = tile.querySelector('.sym');
+        const pct = tile.querySelector('.pct');
+        const s = pick(SYMBOLS);
+        const v = rndPct();
+        sym.textContent = s;
+        pct.textContent = (v>0?'+':'') + v.toFixed(2) + '%';
+        pct.className = 'pct ' + (v>0?'up': v<0?'down':'flat');
+      }
+
+      // First filling
+      WALL.querySelectorAll('.tile').forEach(updateTile);
+
+      // Random refresh (4 blocks every 220ms)
+      setInterval(()=>{
+        const tiles = WALL.querySelectorAll('.tile');
+        for(let i=0;i<4;i++){
+          updateTile(pick([...tiles]));
+        }
+      }, 220);
+    })();
+
+    /* =====================
+     * Ticker Tape（Ticker Tape）
+     * ===================== */
+    (function initTape(){
+      const track = document.getElementById('tape-track');
+      if(!track) return;
+
+      const FEED = [
+        ["AAPL",  0.84], ["MSFT", -0.15], ["NVDA", 1.63], ["AMZN", 0.22],
+        ["META", -0.42], ["TSLA", 0.31],  ["GOOGL", -0.08], ["AMD", 1.05],
+        ["AVGO", -0.26], ["JPM",  0.12], ["BAC",  -0.19], ["XOM", 0.17],
+        ["KO",    0.03], ["PEP", -0.11], ["WMT",  0.21], ["DIS", -0.05],
+        ["INTC",  0.44], ["CRM", -0.28], ["ADBE", 0.37], ["QCOM", -0.16]
+      ];
+      const pill = ([sym, pct]) =>
+        `<span class="${pct>0?'u':pct<0?'d':'f'}">${sym} ${(pct>0?'+':'')+pct.toFixed(2)}%</span>`;
+
+      // Dual content for seamless scrolling
+      track.innerHTML = FEED.map(pill).join('') + FEED.map(pill).join('');
+
+      let x = 0; const speed = 60; // px/s
+      function step(){
+        x -= speed/60; // 约 60fps
+        if (Math.abs(x) > track.scrollWidth/2) x = 0;
+        track.style.transform = `translateX(${x}px)`;
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    })();
+
     /* ===== Helpers ===== */
     const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     const clamp  = (v,a,b) => Math.max(a, Math.min(b, v));
@@ -198,7 +376,7 @@
       // remove off-screen points
       while(points.length && points[0].x < -40*DPR) points.shift();
 
-      // ✅ FIX: generate new points using the latest tail each iteration
+      // generate new points from latest tail
       while(points.length && points[points.length-1].x < W){
         const prev = points[points.length-1];
         let y = prev.y + (Math.random()-0.5) * (18*DPR);
@@ -234,7 +412,7 @@
       { title: 'Liquidity note',      text: 'Spread widening on small caps. Reduce size accordingly.' }
     ];
 
-    const MAX_TOASTS = 10; // 同时最多显示 10 个，避免堆积
+    const MAX_TOASTS = 10; // Display up to 10 at a time to avoid accumulation
     function spawnToast(i){
       const m = MESSAGES[i % MESSAGES.length];
       const d = document.createElement('div');
@@ -250,7 +428,6 @@
       d.style.left = `${left}px`;
       d.style.animation = `pop ${rand(4200, 6200)}ms ease-in-out forwards`;
 
-      // 控制上限
       if (TOASTS.children.length >= MAX_TOASTS) {
         TOASTS.firstChild?.remove();
       }
@@ -259,7 +436,7 @@
     }
 
     let i = 0;
-    setInterval(()=>{ spawnToast(i++); }, 1000); // 每秒一个
+    setInterval(()=>{ spawnToast(i++); }, 1000); // One per second
   </script>
 </body>
 </html>
