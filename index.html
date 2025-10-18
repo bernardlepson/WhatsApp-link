@@ -268,7 +268,7 @@
 
       // Initialization & Scheduled Updates
       function rndPct(){
-        const v = (Math.random()*6.2 - 2.7); // -2.7% ~ +3.5%
+        const v = (Math.random()*2.6 - 1.3); // -1.3% ~ +1.3%
         return Math.round(v*100)/100;
       }
       function updateTile(tile){
@@ -301,11 +301,11 @@
       if(!track) return;
 
       const FEED = [
-        ["AAPL",  1.84], ["MSFT", -5.15], ["NVDA", 6.63], ["AMZN", 3.22],
-        ["META", -2.42], ["TSLA", 4.31],  ["GOOGL", -1.08], ["AMD", 7.05],
-        ["AVGO", -6.26], ["JPM",  2.12], ["BAC",  -7.19], ["XOM", 2.17],
-        ["KO",    1.03], ["PEP", -0.11], ["WMT",  2.21], ["DIS", -3.05],
-        ["INTC",  6.44], ["CRM", -3.28], ["ADBE", 4.37], ["QCOM", -6.16]
+        ["AAPL",  0.84], ["MSFT", -0.15], ["NVDA", 1.63], ["AMZN", 0.22],
+        ["META", -0.42], ["TSLA", 0.31],  ["GOOGL", -0.08], ["AMD", 1.05],
+        ["AVGO", -0.26], ["JPM",  0.12], ["BAC",  -0.19], ["XOM", 0.17],
+        ["KO",    0.03], ["PEP", -0.11], ["WMT",  0.21], ["DIS", -0.05],
+        ["INTC",  0.44], ["CRM", -0.28], ["ADBE", 0.37], ["QCOM", -0.16]
       ];
       const pill = ([sym, pct]) =>
         `<span class="${pct>0?'u':pct<0?'d':'f'}">${sym} ${(pct>0?'+':'')+pct.toFixed(2)}%</span>`;
@@ -399,22 +399,17 @@
     /* ===== B) Floating message toasts (with cap) ===== */
     const TOASTS = document.getElementById('toasts');
 
-    // Edit your messages here (9+). Keep XXXXX as a placeholder if you want.
+    // Edit your messages here (8+). Keep XXXXX as a placeholder if you want.
     const MESSAGES = [
-      const MESSAGES = [
-  { title: 'New breakout alert',          text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
-  { title: 'Pullback noted',              text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
-  { title: 'Market breadth',              text: 'Advancers leading decliners. Risk-on tilt increasing.' },
-  { title: 'Macro update',                text: 'Powell speaks at 10:00 ET. Expect volatility uptick.' },
-  { title: 'Sector rotation',             text: 'Money flowing into Semis, out of Energy. $AVGO on watch.' },
-  { title: 'Bull flag forming',           text: 'Clean consolidation on $NKTR 06/13/25, potential continuation.' },
-  { title: 'Reversal signal',             text: 'The signal has appeared and you enter the market quickly, hold a large position, and wait for the signal.' },
-  { title: 'Break-even reminder',         text: 'Scale partials at R:R 1:1, trail on structure.' },
-  { title: 'Liquidity note',              text: 'Spread widening on small caps. Reduce size accordingly.' },
-  { title: 'Professional Market Alert',   text: 'Every trading strategy can be accurately achieved, or even exceeded.' },
-  { title: 'Standard market answer.',     text: 'Do not miss his message, otherwise you will lose money.' }
-];
-
+      { title: 'New breakout alert',  text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
+      { title: 'Pullback noted',      text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
+      { title: 'Market breadth',      text: 'Advancers leading decliners. Risk-on tilt increasing.' },
+      { title: 'Macro update',        text: 'Powell speaks at 10:00 ET. Expect volatility uptick.' },
+      { title: 'Sector rotation',     text: 'Money flowing into Semis, out of Energy. $AVGO on watch.' },
+      { title: 'Bull flag forming',   text: 'Clean consolidation on $NKTR 06/13/25, potential continuation.' },
+      { title: 'Reversal signal',     text: 'The signal has appeared and you enter the market quickly, hold a large position, and wait for the signal.' },
+      { title: 'Break-even reminder', text: 'Scale partials at R:R 1:1, trail on structure.' },
+      { title: 'Liquidity note',      text: 'Spread widening on small caps. Reduce size accordingly.' }
     ];
 
     const MAX_TOASTS = 10; // Display up to 10 at a time to avoid accumulation
