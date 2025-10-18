@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Join my WhatsApp group</title>
+  <title>Join TradeX Hot Zone WhatsApp group</title>
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Join my WhatsApp group" />
+  <meta property="og:title" content="Join TradeX Hot Zone WhatsApp group" />
   <meta property="og:description" content="Click to join the chat and get daily US stock insights and market trading strategies." />
   <meta property="og:image" content="https://bernardlepson.github.io/WhatsApp-link/assets/whatsapp-preview.png" />
   <meta property="og:image:width" content="1000" />
@@ -16,7 +16,7 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Join my WhatsApp group" />
+  <meta name="twitter:title" content="Join TradeX Hot Zone WhatsApp group" />
   <meta name="twitter:description" content="Click to join the chat and get daily US stock insights and market trading strategies." />
   <meta name="twitter:image" content="https://bernardlepson.github.io/WhatsApp-link/assets/whatsapp-preview.png" />
 
@@ -45,7 +45,7 @@
       overflow: hidden; /* keep animated bg inside */
     }
 
-    /* ===== Background layers (canvas price line + grid + toasts) ===== */
+    /* ===== Background (canvas price line + grid + toasts) ===== */
     #bg-wrap{position:fixed; inset:0; z-index:0;}
     canvas#chart{position:absolute; inset:0; width:100%; height:100%; display:block;}
     .grid{position:absolute; inset:0; background-image:
@@ -145,20 +145,21 @@
   </main>
 
   <script>
-    /* ===== Helper ===== */
-    function cssVar(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim()}
-    function clamp(v,a,b){return Math.max(a, Math.min(b, v))}
-    function rand(a,b){return a + Math.random()*(b-a)}
+    /* ===== Helpers ===== */
+    const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const clamp  = (v,a,b) => Math.max(a, Math.min(b, v));
+    const rand   = (a,b) => a + Math.random()*(b-a);
 
-    /* =====================
-     * A) PRICE-LINE BACKGROUND
-     * ===================== */
+    /* ===== A) Price-line background (FIXED: no infinite growth) ===== */
     const canvas = document.getElementById('chart');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
+
+    // cap DPR to avoid huge canvases on high-DPI screens
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
     function size(){
-      canvas.width  = innerWidth * devicePixelRatio;
-      canvas.height = innerHeight * devicePixelRatio;
+      canvas.width  = Math.floor(innerWidth  * DPR);
+      canvas.height = Math.floor(innerHeight * DPR);
     }
     size(); addEventListener('resize', size);
 
@@ -170,8 +171,8 @@
       points = [];
       const W = canvas.width, H = canvas.height;
       let y = H*0.55;
-      for(let x=0; x<=W; x+=20*devicePixelRatio){
-        y += (Math.random()-0.5) * (18*devicePixelRatio);
+      for(let x=0; x<=W; x+=20*DPR){
+        y += (Math.random()-0.5) * (18*DPR);
         y = clamp(y, H*0.25, H*0.8);
         points.push({x, y});
       }
@@ -192,36 +193,35 @@
       const W = canvas.width, H = canvas.height;
 
       // scroll left
-      for(const p of points){ p.x -= 1.6*devicePixelRatio; }
+      for(const p of points){ p.x -= 1.6*DPR; }
 
-      // remove off-screen points and add new ones
-      while(points.length && points[0].x < -40*devicePixelRatio) points.shift();
-      const last = points[points.length-1];
-      while(last && last.x < W){
-        let y = last.y + (Math.random()-0.5) * (18*devicePixelRatio);
+      // remove off-screen points
+      while(points.length && points[0].x < -40*DPR) points.shift();
+
+      // ✅ FIX: generate new points using the latest tail each iteration
+      while(points.length && points[points.length-1].x < W){
+        const prev = points[points.length-1];
+        let y = prev.y + (Math.random()-0.5) * (18*DPR);
         y = clamp(y, H*0.25, H*0.8);
-        points.push({x: last.x + 20*devicePixelRatio, y});
+        points.push({x: prev.x + 20*DPR, y});
       }
 
-      // draw glow
+      // draw
       ctx.clearRect(0,0,W,H);
       ctx.beginPath(); trace();
-      ctx.strokeStyle = GLOW_COLOR; ctx.lineWidth = 8*devicePixelRatio; ctx.globalAlpha = 0.14; ctx.stroke();
+      ctx.strokeStyle = GLOW_COLOR; ctx.lineWidth = 8*DPR; ctx.globalAlpha = 0.14; ctx.stroke();
 
-      // draw main line
       ctx.beginPath(); trace();
-      ctx.strokeStyle = LINE_COLOR; ctx.lineWidth = 2.4*devicePixelRatio; ctx.globalAlpha = 1; ctx.stroke();
+      ctx.strokeStyle = LINE_COLOR; ctx.lineWidth = 2.4*DPR; ctx.globalAlpha = 1; ctx.stroke();
 
       requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
 
-    /* =====================
-     * B) FLOATING MESSAGE TOASTS
-     * ===================== */
+    /* ===== B) Floating message toasts (with cap) ===== */
     const TOASTS = document.getElementById('toasts');
 
-    // >>> EDIT THESE MESSAGES (8+ items). Keep XXXXX as placeholder to replace later.
+    // Edit your messages here (8+). Keep XXXXX as a placeholder if you want.
     const MESSAGES = [
       { title: 'New breakout alert',  text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
       { title: 'Pullback noted',      text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
@@ -234,13 +234,13 @@
       { title: 'Liquidity note',      text: 'Spread widening on small caps. Reduce size accordingly.' }
     ];
 
+    const MAX_TOASTS = 10; // 同时最多显示 10 个，避免堆积
     function spawnToast(i){
       const m = MESSAGES[i % MESSAGES.length];
       const d = document.createElement('div');
       d.className = 'toast';
       d.innerHTML = `<h4>${m.title}</h4><p>${m.text}</p><div class="meta">Live feed · now</div>`;
 
-      // random position bands
       const w = innerWidth, h = innerHeight;
       const band = Math.random();
       const top = band<.33 ? rand(h*0.12, h*0.36) : band<.66 ? rand(h*0.38, h*0.62) : rand(h*0.64, h*0.86);
@@ -250,12 +250,16 @@
       d.style.left = `${left}px`;
       d.style.animation = `pop ${rand(4200, 6200)}ms ease-in-out forwards`;
 
+      // 控制上限
+      if (TOASTS.children.length >= MAX_TOASTS) {
+        TOASTS.firstChild?.remove();
+      }
       TOASTS.appendChild(d);
       setTimeout(()=> d.remove(), 6500);
     }
 
     let i = 0;
-    setInterval(()=>{ spawnToast(i++); }, 950); // every ~0.95s a new one
+    setInterval(()=>{ spawnToast(i++); }, 1000); // 每秒一个
   </script>
 </body>
 </html>
