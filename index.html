@@ -399,19 +399,22 @@
     /* ===== B) Floating message toasts (with cap) ===== */
     const TOASTS = document.getElementById('toasts');
 
-    // Edit your messages here (8+). Keep XXXXX as a placeholder if you want.
+    // Edit your messages here (9+). Keep XXXXX as a placeholder if you want.
     const MESSAGES = [
-      { title: 'New breakout alert',          text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
-      { title: 'Pullback noted',              text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
-      { title: 'Market breadth',              text: 'Advancers leading decliners. Risk-on tilt increasing.' },
-      { title: 'Macro update',                text: 'Powell speaks at 10:00 ET. Expect volatility uptick.' },
-      { title: 'Sector rotation',             text: 'Money flowing into Semis, out of Energy. $AVGO on watch.' },
-      { title: 'Bull flag forming',           text: 'Clean consolidation on $NKTR 06/13/25, potential continuation.' },
-      { title: 'Reversal signal',             text: 'The signal has appeared and you enter the market quickly, hold a large position, and wait for the signal.' },
-      { title: 'Break-even reminder',         text: 'Scale partials at R:R 1:1, trail on structure.' },
-      { title: 'Liquidity note',              text: 'Spread widening on small caps. Reduce size accordingly.' }
-      { title: 'Professional Market Alert',   text: 'Every trading strategy can be accurately achieved, or even exceeded.' },
-      { title: 'Standard market answer.',     text: 'Do not miss his message, otherwise you will lose money.' }
+      const MESSAGES = [
+  { title: 'New breakout alert',          text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
+  { title: 'Pullback noted',              text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
+  { title: 'Market breadth',              text: 'Advancers leading decliners. Risk-on tilt increasing.' },
+  { title: 'Macro update',                text: 'Powell speaks at 10:00 ET. Expect volatility uptick.' },
+  { title: 'Sector rotation',             text: 'Money flowing into Semis, out of Energy. $AVGO on watch.' },
+  { title: 'Bull flag forming',           text: 'Clean consolidation on $NKTR 06/13/25, potential continuation.' },
+  { title: 'Reversal signal',             text: 'The signal has appeared and you enter the market quickly, hold a large position, and wait for the signal.' },
+  { title: 'Break-even reminder',         text: 'Scale partials at R:R 1:1, trail on structure.' },
+  { title: 'Liquidity note',              text: 'Spread widening on small caps. Reduce size accordingly.' },
+  { title: 'Professional Market Alert',   text: 'Every trading strategy can be accurately achieved, or even exceeded.' },
+  { title: 'Standard market answer.',     text: 'Do not miss his message, otherwise you will lose money.' }
+];
+
     ];
 
     const MAX_TOASTS = 10; // Display up to 10 at a time to avoid accumulation
