@@ -250,7 +250,7 @@
 
       const COLS = 12;             // Number of columns
       const ROWS = 10;             // Number of rows per column
-      const SYMBOLS = ["AAPL","MSFT","NVDA","AMZN","META","TSLA","GOOGL","AMD","NFLX","AVGO","JPM","BAC","XOM","CVX","KO","PEP","WMT","DIS","INTC","CRM","ADBE","CSCO","QCOM","NTRP","HIND","ESPR","BTCS","HMR","GV","BIVI","CLNN","VVPR","AGRI","MOVE","AKAN","GSIT","ARBB","ADAP","OFAL","MDIA","WAI","SOUN","VIOT","TONX","CEVS","ILLR","SPCE","TSM"];
+      const SYMBOLS = ["AAPL","MSFT","NVDA","AMZN","META","TSLA","GOOGL","AMD","NFLX","AVGO","JPM","KO","PEP","WMT","VVPR","AGRI","MOVE","AKAN","ARBB","ADAP","OFAL","MDIA","SOUN","VIOT","TONX","CEVS","ILLR","SPCE","TSM"];
       const pick = (arr)=> arr[Math.floor(Math.random()*arr.length)];
 
       // Build columns
@@ -399,23 +399,22 @@
     /* ===== B) Floating message toasts (with cap) ===== */
     const TOASTS = document.getElementById('toasts');
 
-    // Edit your messages here (12+). Keep XXXXX as a placeholder if you want.
+    // Edit your messages here (8+). Keep XXXXX as a placeholder if you want.
     const MESSAGES = [
-      { title: 'New breakout alert',              text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
-      { title: 'Pullback noted',                  text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
-      { title: 'Market breadth',                  text: 'Advancers leading decliners. Risk-on tilt increasing.' },
-      { title: 'Macro update',                    text: 'Powell speaks at 10:00 ET. Expect volatility uptick.' },
-      { title: 'Sector rotation',                 text: 'Money flowing into Semis, out of Energy. $AVGO on watch.' },
-      { title: 'Bull flag forming',               text: 'Clean consolidation on $NKTR 06/13/25, potential continuation.' },
-      { title: 'Reversal signal',                 text: 'The signal has appeared and you enter the market quickly, hold a large position, and wait for the signal.' },
-      { title: 'Break-even reminder',             text: 'Scale partials at R:R 1:1, trail on structure.' },
-      { title: 'Liquidity note',                  text: 'Spread widening on small caps. Reduce size accordingly.' }
-      { title: 'Professional Market Alert',       text: 'Every trading strategy can be accurately achieved, or even exceeded.' },
-      { title: 'Standard market answer.',         text: 'Do not miss his message, otherwise you will lose money.' }
-      { title: 'The best teacher in the market.', text: 'Do not miss his message, otherwise you will lose money.' }
+      { title: 'New breakout alert',          text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
+      { title: 'Pullback noted',              text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
+      { title: 'Market breadth',              text: 'Advancers leading decliners. Risk-on tilt increasing.' },
+      { title: 'Macro update',                text: 'Powell speaks at 10:00 ET. Expect volatility uptick.' },
+      { title: 'Sector rotation',             text: 'Money flowing into Semis, out of Energy. $AVGO on watch.' },
+      { title: 'Bull flag forming',           text: 'Clean consolidation on $NKTR 06/13/25, potential continuation.' },
+      { title: 'Reversal signal',             text: 'The signal has appeared and you enter the market quickly, hold a large position, and wait for the signal.' },
+      { title: 'Break-even reminder',         text: 'Scale partials at R:R 1:1, trail on structure.' },
+      { title: 'Liquidity note',              text: 'Spread widening on small caps. Reduce size accordingly.' }
+      { title: 'Professional Market Alert',   text: 'Every trading strategy can be accurately achieved, or even exceeded.' },
+      { title: 'Standard market answer.',     text: 'Do not miss his message, otherwise you will lose money.' }
     ];
 
-    const MAX_TOASTS = 11; // Display up to 11 at a time to avoid accumulation
+    const MAX_TOASTS = 10; // Display up to 10 at a time to avoid accumulation
     function spawnToast(i){
       const m = MESSAGES[i % MESSAGES.length];
       const d = document.createElement('div');
