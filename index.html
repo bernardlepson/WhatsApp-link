@@ -17,7 +17,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Join my WhatsApp group" />
-  <meta name="twitter:description" content="Click to join the chat and get daily US stock insights and market strategies." />
+  <meta name="twitter:description" content="Click to join the chat and get daily US stock insights and market trading strategies." />
   <meta name="twitter:image" content="https://bernardlepson.github.io/WhatsApp-link/assets/whatsapp-preview.png" />
 
   <style>
@@ -28,6 +28,11 @@
       --muted: #a7b5ad;
       --accent: #25a263;
       --accent-strong: #1a8c53;
+
+      /* dynamic background theme */
+      --grid: #1a2a33;
+      --line: #2dd4bf;
+      --line-glow: #99f6e4;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -37,8 +42,42 @@
       color: var(--fg);
       font: 16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
       display:flex; align-items:center; justify-content:center; padding:24px;
+      overflow: hidden; /* keep animated bg inside */
     }
+
+    /* ===== Background layers (canvas price line + grid + toasts) ===== */
+    #bg-wrap{position:fixed; inset:0; z-index:0;}
+    canvas#chart{position:absolute; inset:0; width:100%; height:100%; display:block;}
+    .grid{position:absolute; inset:0; background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+      background-size:60px 60px; opacity:.25;}
+    @keyframes drift {from{transform:translate(0,0)} to{transform:translate(-60px,-60px)}}
+    .grid{animation:drift 18s linear infinite;}
+
+    #toasts{position:fixed; inset:0; pointer-events:none; z-index:2;}
+    .toast{
+      position:absolute; min-width:260px; max-width:360px; padding:12px 14px;
+      background:linear-gradient(180deg, rgba(15,30,48,.92), rgba(8,16,28,.92));
+      border:1px solid rgba(255,255,255,.06); border-radius:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      color:#e6f6ff;
+      transform-origin:center;
+      backdrop-filter: blur(6px);
+    }
+    .toast h4{margin:0 0 6px; font-size:14px; letter-spacing:.3px; color:#bfe6ff}
+    .toast p{margin:0; font-size:13px; color:#d4e7f7}
+    .toast .meta{margin-top:6px; font-size:12px; color:#9bbad4}
+    @keyframes pop {
+      0%   {opacity:0; transform:scale(.82)}
+      18%  {opacity:1; transform:scale(1)}
+      82%  {opacity:1; transform:scale(1)}
+      100% {opacity:0; transform:scale(1.02)}
+    }
+
+    /* ===== Foreground card ===== */
     .card {
+      position: relative; z-index:3;
       width:100%; max-width: 680px;
       background: linear-gradient(180deg, rgba(16,23,26,0.9), rgba(16,23,26,0.8));
       border: 1px solid rgba(255,255,255,0.06);
@@ -64,15 +103,28 @@
     .cta:hover { background: var(--accent-strong); }
     .fine { margin-top:14px; font-size:13px; color: var(--muted); }
     .footer { margin-top: 24px; font-size:12px; color:#7c8a84 }
+
     @media (prefers-color-scheme: light){
       :root{ --bg: #f6faf8; --card: #ffffff; --fg:#0d1712; --muted:#4a5a52; }
       body{ background: radial-gradient(1200px 600px at 70% -10%, rgba(37,162,99,0.12), transparent 60%) , var(--bg); }
       .card{ background: #ffffffcc; border-color: rgba(0,0,0,0.05) }
       .footer{ color:#6c7a73 }
+      .toast{background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(240,246,255,.9)); color:#0b1220}
+      .toast h4{color:#0b3a63}
+      .toast p{color:#0f2a45}
+      .toast .meta{color:#335a7a}
     }
   </style>
 </head>
 <body>
+  <!-- animated background -->
+  <div id="bg-wrap" aria-hidden="true">
+    <canvas id="chart"></canvas>
+    <div class="grid"></div>
+    <div id="toasts"></div>
+  </div>
+
+  <!-- foreground content -->
   <main class="card" role="main" aria-labelledby="title">
     <img class="logo" src="https://bernardlepson.github.io/WhatsApp-link/assets/whatsapp-preview.png" alt="Trading Chat Logo" />
     <h1 id="title">Join TradeX Hot Zone WhatsApp group</h1>
@@ -91,5 +143,119 @@
 
     <div class="footer">Note: The TradeX Hot Zone community primarily focuses on intraday trading and short-term trading, with long-term trading serving as a supplementary tool. We welcome you to join us to learn from each other and improve your return on investment.</div>
   </main>
+
+  <script>
+    /* ===== Helper ===== */
+    function cssVar(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim()}
+    function clamp(v,a,b){return Math.max(a, Math.min(b, v))}
+    function rand(a,b){return a + Math.random()*(b-a)}
+
+    /* =====================
+     * A) PRICE-LINE BACKGROUND
+     * ===================== */
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+
+    function size(){
+      canvas.width  = innerWidth * devicePixelRatio;
+      canvas.height = innerHeight * devicePixelRatio;
+    }
+    size(); addEventListener('resize', size);
+
+    const LINE_COLOR = cssVar('--line');
+    const GLOW_COLOR = cssVar('--line-glow');
+
+    let points = [];
+    function resetPoints(){
+      points = [];
+      const W = canvas.width, H = canvas.height;
+      let y = H*0.55;
+      for(let x=0; x<=W; x+=20*devicePixelRatio){
+        y += (Math.random()-0.5) * (18*devicePixelRatio);
+        y = clamp(y, H*0.25, H*0.8);
+        points.push({x, y});
+      }
+    }
+    resetPoints();
+
+    function trace(){
+      if(points.length<2) return;
+      ctx.moveTo(points[0].x, points[0].y);
+      for(let i=1;i<points.length;i++){
+        const p = points[i], prev = points[i-1];
+        const cx = (prev.x + p.x)/2, cy = (prev.y + p.y)/2;
+        ctx.quadraticCurveTo(prev.x, prev.y, cx, cy);
+      }
+    }
+
+    function step(){
+      const W = canvas.width, H = canvas.height;
+
+      // scroll left
+      for(const p of points){ p.x -= 1.6*devicePixelRatio; }
+
+      // remove off-screen points and add new ones
+      while(points.length && points[0].x < -40*devicePixelRatio) points.shift();
+      const last = points[points.length-1];
+      while(last && last.x < W){
+        let y = last.y + (Math.random()-0.5) * (18*devicePixelRatio);
+        y = clamp(y, H*0.25, H*0.8);
+        points.push({x: last.x + 20*devicePixelRatio, y});
+      }
+
+      // draw glow
+      ctx.clearRect(0,0,W,H);
+      ctx.beginPath(); trace();
+      ctx.strokeStyle = GLOW_COLOR; ctx.lineWidth = 8*devicePixelRatio; ctx.globalAlpha = 0.14; ctx.stroke();
+
+      // draw main line
+      ctx.beginPath(); trace();
+      ctx.strokeStyle = LINE_COLOR; ctx.lineWidth = 2.4*devicePixelRatio; ctx.globalAlpha = 1; ctx.stroke();
+
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+
+    /* =====================
+     * B) FLOATING MESSAGE TOASTS
+     * ===================== */
+    const TOASTS = document.getElementById('toasts');
+
+    // >>> EDIT THESE MESSAGES (8+ items). Keep XXXXX as placeholder to replace later.
+    const MESSAGES = [
+      { title: 'New breakout alert',  text: ' $NUAI just crossed the resistance. Watch volume and VWAP.' },
+      { title: 'Pullback noted',      text: 'Short-term retracement on $ABVE. Eyes on 5-min trendline.' },
+      { title: 'Market breadth',      text: 'Advancers leading decliners. Risk-on tilt increasing.' },
+      { title: 'Macro update',        text: 'Powell speaks at 10:00 ET. Expect volatility uptick.' },
+      { title: 'Sector rotation',     text: 'Money flowing into Semis, out of Energy. $AVGO on watch.' },
+      { title: 'Bull flag forming',   text: 'Clean consolidation on $NKTR 06/13/25, potential continuation.' },
+      { title: 'Reversal signal',     text: 'The signal has appeared and you enter the market quickly, hold a large position, and wait for the signal.' },
+      { title: 'Break-even reminder', text: 'Scale partials at R:R 1:1, trail on structure.' },
+      { title: 'Liquidity note',      text: 'Spread widening on small caps. Reduce size accordingly.' }
+    ];
+
+    function spawnToast(i){
+      const m = MESSAGES[i % MESSAGES.length];
+      const d = document.createElement('div');
+      d.className = 'toast';
+      d.innerHTML = `<h4>${m.title}</h4><p>${m.text}</p><div class="meta">Live feed · now</div>`;
+
+      // random position bands
+      const w = innerWidth, h = innerHeight;
+      const band = Math.random();
+      const top = band<.33 ? rand(h*0.12, h*0.36) : band<.66 ? rand(h*0.38, h*0.62) : rand(h*0.64, h*0.86);
+      const left = rand(w*0.08, w*0.72);
+
+      d.style.top = `${top}px`;
+      d.style.left = `${left}px`;
+      d.style.animation = `pop ${rand(4200, 6200)}ms ease-in-out forwards`;
+
+      TOASTS.appendChild(d);
+      setTimeout(()=> d.remove(), 6500);
+    }
+
+    let i = 0;
+    setInterval(()=>{ spawnToast(i++); }, 950); // every ~0.95s a new one
+  </script>
 </body>
 </html>
